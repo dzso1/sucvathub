@@ -1,0 +1,108 @@
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local localPlayer = Players.LocalPlayer
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ForsakenModUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 300)
+frame.Position = UDim2.new(0, 10, 0.5, -150)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Forsaken Mod"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.Parent = frame
+
+local playerList = Instance.new("ScrollingFrame")
+playerList.Size = UDim2.new(1, -10, 1, -40)
+playerList.Position = UDim2.new(0, 5, 0, 35)
+playerList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+playerList.BorderSizePixel = 0
+playerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerList.ScrollBarThickness = 6
+playerList.Parent = frame
+
+local function createESP(targetPlayer)
+	if targetPlayer == localPlayer then return end
+	local function addBox(character)
+		local hrp = character:FindFirstChild("HumanoidRootPart")
+		if hrp and not hrp:FindFirstChild("ESPBox") then
+			local box = Instance.new("BoxHandleAdornment")
+			box.Name = "ESPBox"
+			box.Adornee = hrp
+			box.Size = Vector3.new(3, 5, 2)
+			box.Color3 = Color3.new(1, 0, 0)
+			box.Transparency = 0.5
+			box.AlwaysOnTop = true
+			box.ZIndex = 10
+			box.Parent = hrp
+		end
+	end
+	local char = targetPlayer.Character or targetPlayer.CharacterAdded:Wait()
+	addBox(char)
+	targetPlayer.CharacterAdded:Connect(addBox)
+end
+
+local function updatePlayerList()
+	playerList:ClearAllChildren()
+	local yOffset = 0
+	for _, plr in pairs(Players:GetPlayers()) do
+		if plr ~= localPlayer then
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(1, -10, 0, 30)
+			btn.Position = UDim2.new(0, 5, 0, yOffset)
+			btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			btn.TextColor3 = Color3.new(1, 1, 1)
+			btn.Font = Enum.Font.SourceSans
+			btn.TextSize = 18
+			btn.Text = plr.Name
+			btn.Parent = playerList
+			btn.MouseButton1Click:Connect(function()
+				local targetChar = plr.Character
+				local myChar = localPlayer.Character
+				if targetChar and myChar and targetChar:FindFirstChild("HumanoidRootPart") and myChar:FindFirstChild("HumanoidRootPart") then
+					myChar.HumanoidRootPart.CFrame = targetChar.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+				end
+			end)
+			createESP(plr)
+			yOffset += 35
+		end
+	end
+	playerList.CanvasSize = UDim2.new(0, 0, 0, yOffset)
+end
+
+Players.PlayerAdded:Connect(function(plr)
+	wait(1)
+	updatePlayerList()
+	createESP(plr)
+end)
+
+Players.PlayerRemoving:Connect(function()
+	updatePlayerList()
+end)
+
+updatePlayerList()
+
+task.spawn(function()
+	while true do
+		local char = localPlayer.Character
+		if char then
+			for _, v in pairs(char:GetDescendants()) do
+				if v:IsA("NumberValue") and v.Name:lower():find("stamina") then
+					v.Value = 999999
+				end
+			end
+		end
+		task.wait(0.1)
+	end
+end)
